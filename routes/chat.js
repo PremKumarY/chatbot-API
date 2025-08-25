@@ -128,7 +128,7 @@ router.post("/", async (req, res) => {
 
     const userMsg = await Chat.create({ from, text });
 
-    let reply = "😅 Sorry, I don't understand. Please try again!";
+    let reply = "Sorry,Please try again! It seems I couldn't find an answer. Choose from the suggestions below:";
     let matchedQuestion = "";
 
     const lowerText = text.toLowerCase();
