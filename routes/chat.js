@@ -1,5 +1,4 @@
 
-// export default router;
 import express from "express";
 import Chat from "../models/Chat.js";
 
@@ -78,10 +77,9 @@ const faq = [
   { question: "feedback mechanism", answer: "Users can submit feedback via feedback@ijekertech.com or our website form." },
 ];
 
-// Helper → get most relevant suggestions (5–6) based on keywords
+
 function getSmartSuggestions(currentQ) {
   if (!currentQ) return [];
-
   const keywords = currentQ
     .split(" ")
     .filter((w) => w.length > 3)
@@ -105,7 +103,6 @@ function getSmartSuggestions(currentQ) {
     if (uniqueSuggestions.length >= 6) break;
   }
 
-  // Fill remaining slots with random questions if less than 5
   if (uniqueSuggestions.length < 5) {
     const remaining = faq
       .filter(f => f.question !== currentQ && !seen.has(f.question))
@@ -120,30 +117,36 @@ function getSmartSuggestions(currentQ) {
   return uniqueSuggestions;
 }
 
-// POST chat message
+// ✅ POST chat message (secure)
 router.post("/", async (req, res) => {
   try {
-    const { from, text } = req.body;
-    if (!text) return res.status(400).json({ error: "Message is empty" });
+    const { email, from, text } = req.body;
+    if (!email || !text) {
+      return res.status(400).json({ error: "Email and message required" });
+    }
 
-    const userMsg = await Chat.create({ from, text });
+    // Save user message
+    const userMsg = await Chat.create({ email, from, text });
 
-    let reply = "Sorry,Please try again! It seems I couldn't find an answer. Choose from the suggestions below:";
+    let reply = "Sorry, Please try again! Choose from the suggestions below:";
     let matchedQuestion = "";
-
     const lowerText = text.toLowerCase();
-    const matched = faq.find((q) => lowerText.includes(q.question));
 
+    const matched = faq.find((q) => lowerText.includes(q.question));
     if (matched) {
       reply = matched.answer;
       matchedQuestion = matched.question;
     }
+    // Save bot reply
+    const botMsg = await Chat.create({ email, from: "bot", text: reply });
 
-    const botMsg = await Chat.create({ from: "bot", text: reply });
+    // ✅ Return only safe fields (no _id, no __v)
+    const chats = await Chat.find({ email })
+      .select("from text createdAt")
+      .sort({ createdAt: 1 });
 
     res.json({
-      userMsg,
-      botMsg,
+      chats,
       suggestions: getSmartSuggestions(matchedQuestion),
     });
   } catch (err) {
@@ -151,16 +154,4 @@ router.post("/", async (req, res) => {
     res.status(500).json({ error: "Chat failed" });
   }
 });
-
-// GET all chats
-router.get("/", async (req, res) => {
-  try {
-    const chats = await Chat.find().sort({ createdAt: 1 });
-    res.json(chats);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to fetch chats" });
-  }
-});
-
 export default router;
