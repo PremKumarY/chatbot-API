@@ -5,10 +5,10 @@ import rateLimit from "express-rate-limit";
 
 const router = express.Router();
 
-// Basic rate limiting to prevent spam/flooding
+// ✅ Rate limiting (per endpoint)
 const limiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: 10, // limit each IP to 10 requests per windowMs
+  max: 10,
   message: { error: "Too many requests, please try again later." }
 });
 
@@ -17,7 +17,7 @@ router.post("/", limiter, async (req, res) => {
     let { contact } = req.body;
     if (!contact) return res.status(400).json({ error: "Contact is required" });
 
-    // Sanitize input to prevent NoSQL injection
+    // Sanitize input
     contact = sanitize(contact);
 
     const lead = await Lead.create({ contact });
