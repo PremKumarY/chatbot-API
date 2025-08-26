@@ -1,152 +1,185 @@
-
 import express from "express";
 import Chat from "../models/Chat.js";
+import sanitize from "mongo-sanitize";
 
 const router = express.Router();
 
-// Comprehensive FAQ (75+ entries)
-const faq = [
-  { question: "Do you offer training or internships?", answer: "Yes! ijekerTech offers both training and internship programs in AI, ML, Web & Software Development. Our internships are 1–3 months long, giving hands-on experience on real projects. Trainings are customized for individuals and corporate clients." },
-  { question: "Career opportunities at ijekerTech", answer: "We welcome talented individuals to join ijekerTech! Opportunities are available for interns, junior developers, AI/ML engineers, and IT consultants. You can apply by sending your resume to hr@ijekertech.com." },
-  { question: "How can I contact the company?", answer: "You can reach us via email at support@ijekertech.com, call us at +91-XXXXXXXXXX, or visit our office at Padrauna, Kushinagar, Uttar Pradesh, India. Our support team is ready to assist you with any queries." },
-  { question: "what services do you offer", answer: "We at ijekerTech provide AI solutions, Web Development, Mobile & Software Development, and IT Consultancy services." },
-  { question: "pricing plans", answer: "Our pricing depends on the project scope. Contact us at support@ijekertech.com for a custom quote." },
-  { question: "talk to support", answer: "Reach our support team via support@ijekertech.com or call +91-XXXXXXXXXX." },
-  { question: "company", answer: "ijekerTech is an IT company focused on AI, Software, and Consultancy services." },
-  { question: "training", answer: "We provide internship and training programs in AI, ML, Web Development, and Full Stack Development." },
-  { question: "internship", answer: "Our internship programs provide hands-on experience in AI, ML, Web & Software projects. Duration: 1-3 months." },
-  { question: "ai projects", answer: "We develop AI solutions like Smart Surveillance, Debate Assistant AI, and Chatbots." },
-  { question: "career opportunities", answer: "Opportunities for interns, junior developers, and professionals are available. Apply at hr@ijekertech.com." },
-  { question: "contact", answer: "Contact us via support@ijekertech.com or visit our office at Padrauna, Kushinagar, UP, India." },
-  { question: "about founders", answer: "ijekerTech is founded by Prem Kumar Yadav, focusing on AI and IT innovations." },
-  { question: "technologies used", answer: "We use Python, Node.js, React, MongoDB, AI/ML frameworks (TensorFlow, PyTorch), and cloud services." },
-  { question: "custom software", answer: "We develop custom software for automation, analytics, web & mobile apps." },
-  { question: "ongoing projects", answer: "Smart CCTV Surveillance, Debate Assistant AI, and web-based music systems." },
-  { question: "client support", answer: "We provide dedicated client support for all our solutions." },
-  { question: "feedback", answer: "Share feedback at feedback@ijekertech.com." },
-  { question: "full stack development", answer: "We offer full-stack web development using MERN (MongoDB, Express, React, Node.js)." },
-  { question: "mobile app development", answer: "We build Android and iOS apps using React Native and Flutter." },
-  { question: "web development", answer: "We create responsive and modern websites using React, Tailwind CSS, and Node.js." },
-  { question: "ai consultancy", answer: "We provide AI consultancy to integrate ML & AI into business processes." },
-  { question: "machine learning", answer: "We develop ML models for predictive analytics, automation, and AI assistants." },
-  { question: "deep learning", answer: "We implement deep learning solutions using TensorFlow and PyTorch." },
-  { question: "smart surveillance", answer: "Our Smart CCTV Surveillance detects unusual activity in real-time using AI." },
-  { question: "debate assistant ai", answer: "We provide a Debate Assistant AI that helps users prepare for debates using facts and voice input." },
-  { question: "music system project", answer: "A web-based music system with personalized libraries, multi-user support, and premium features." },
-  { question: "intern programs duration", answer: "Internship programs range from 1 to 3 months depending on the project." },
-  { question: "training programs duration", answer: "Training programs are customized, typically 2-4 weeks per course." },
-  { question: "online courses", answer: "We provide online courses in AI, ML, Python, Data Science, and Full Stack Development." },
-  { question: "onsite training", answer: "Onsite training is available for institutions or corporate clients." },
-  { question: "github resources", answer: "Our projects and demo codes are available on our official GitHub." },
-  { question: "portfolio", answer: "Our portfolio includes AI projects, web & mobile apps, and software solutions." },
-  { question: "subscription plans", answer: "Premium users can access high-quality features in our apps and services." },
-  { question: "trial period", answer: "We offer a free trial period for new users in our products." },
-  { question: "security", answer: "We follow best practices for data security and user privacy in all projects." },
-  { question: "data privacy", answer: "User data is handled securely and never shared without consent." },
-  { question: "clientele", answer: "We serve startups, SMEs, and corporate clients across India." },
-  { question: "automation solutions", answer: "We provide software to automate business processes efficiently." },
-  { question: "analytics", answer: "We build analytics dashboards and reports using AI and ML models." },
-  { question: "technical consultancy", answer: "We advise companies on software, AI, and IT infrastructure." },
-  { question: "support channels", answer: "Email: support@ijekertech.com, Phone: +91-XXXXXXXXXX, Chatbot support available on our website." },
-  { question: "ai research", answer: "Our AI research focuses on NLP, computer vision, and predictive analytics." },
-  { question: "future projects", answer: "Upcoming projects include AI assistants, IoT solutions, and smart automation tools." },
-  { question: "languages we use", answer: "Python, JavaScript, TypeScript, SQL, NoSQL (MongoDB)." },
-  { question: "hosting services", answer: "We deploy apps using cloud services like AWS, Azure, and Google Cloud." },
-  { question: "open source contributions", answer: "We contribute to open-source AI and web development projects." },
-  { question: "team", answer: "Our team consists of AI engineers, software developers, data scientists, and IT consultants." },
-  { question: "vision", answer: "To empower businesses with AI and innovative IT solutions." },
-  { question: "mission", answer: "To provide reliable, cutting-edge software and AI solutions that drive growth." },
-  { question: "client testimonials", answer: "Our clients praise our innovative solutions, technical expertise, and support." },
-  { question: "project collaboration", answer: "We collaborate with clients to understand requirements and deliver customized solutions." },
-  { question: "demo requests", answer: "Request a demo by contacting us at support@ijekertech.com." },
-  { question: "partnerships", answer: "We partner with tech companies, institutions, and startups for joint projects." },
-  { question: "research collaborations", answer: "We collaborate with universities and research institutions for AI/ML research." },
-  { question: "faq", answer: "You can ask me about services, training, AI projects, pricing, internships, and company info." },
-  { question: "customer support hours", answer: "Our support team is available Monday to Friday, 9 AM to 6 PM IST." },
-  { question: "project timeline", answer: "Project timelines depend on complexity; typically 2-6 weeks for small apps." },
-  { question: "maintenance services", answer: "We provide post-deployment maintenance and updates for software and apps." },
-  { question: "certifications", answer: "Our training programs provide completion certificates for students and interns." },
-  { question: "client onboarding", answer: "We guide clients through project onboarding and requirements gathering." },
-  { question: "demo session", answer: "You can schedule a live demo session to explore our services and projects." },
-  { question: "refund policy", answer: "For paid services or courses, refunds are provided as per our company policy." },
-  { question: "workshop", answer: "We organize workshops on AI, ML, and Web Development for students and professionals." },
-  { question: "latest updates", answer: "Follow our social media channels for the latest news and project updates." },
-  { question: "newsletter", answer: "Subscribe to our newsletter at support@ijekertech.com to receive updates and announcements." },
-  { question: "privacy policy", answer: "Read our privacy policy at www.ijekertech.com/privacy." },
-  { question: "terms and conditions", answer: "Our terms and conditions are available at www.ijekertech.com/terms." },
-  { question: "feedback mechanism", answer: "Users can submit feedback via feedback@ijekertech.com or our website form." },
+// ✅ FAQ entries
+
+export const faq = [
+  // Company & Registration
+  { question: "about ijekerTech", answer: "ijekerTech is an IT consultancy and services firm focused on AI/ML, Web & Software Development, Research, and Technology Advisory." },
+  { question: "ijekerTech services", answer: "We provide AI/ML solutions, custom web & app development, consultancy, research-driven projects, and smart surveillance systems." },
+  { question: "ijekerTech team", answer: "ijekerTech is founded by Prem Kumar Yadav and managed collaboratively with a team of 2–10 specialists across AI, Web, Data, Mobile, and IT consultancy." },
+  { question: "ijekerTech projects", answer: "Our projects include AI-powered chatbots, smart CCTV surveillance, debate assistant AI, typing game platforms, and custom web applications." },
+  { question: "company", answer: "ijekerTech is an IT consultancy and services firm focused on AI/ML, web & software development, and technology advisory." },
+  { question: "founder", answer: "ijekerTech was founded by Prem Kumar Yadav to deliver practical AI and modern software solutions." },
+  { question: "company type", answer: "ijekerTech is officially registered as a sole proprietorship (MSME) in India, but it is managed and operated by a collaborative team of professionals, not a single person." },
+  { question: "msme", answer: "Yes, ijekerTech is registered under MSME (Micro, Small & Medium Enterprises) in India." },
+  { question: "location", answer: "We are based in Padrauna, Kushinagar, Uttar Pradesh, India, and work with clients across India and abroad remotely." },
+
+  // Team & Expertise
+  { question: "team size", answer: "Our agile team consists of 2–10 members covering AI/ML, Web, Mobile, Data Engineering, DevOps, UI/UX, QA, and IT consultancy." },
+  { question: "team expertise", answer: "Core expertise spans Artificial Intelligence, Machine Learning, Computer Vision, NLP, MERN full-stack, mobile apps, cloud, automation, and data analytics." },
+  { question: "about founder / team expertise", answer: "Founder-led but team-driven—ijekerTech combines AI research, product engineering, and end-to-end web/mobile solution delivery for education, automation, and analytics." },
+
+  // Mission, Vision & Values
+  { question: "mission", answer: "To deliver reliable, high-impact AI and software solutions and to upskill students and professionals through practical training." },
+  { question: "vision", answer: "To become a trusted technology partner known for applied AI, quality engineering, and hands-on learning." },
+  { question: "values", answer: "Transparency, ownership, craftsmanship, speed with quality, and continuous learning." },
+
+  // Services
+  { question: "services", answer: "AI/ML development, custom software & web apps, mobile apps, chatbots, smart surveillance, data analytics dashboards, automation, and IT consultancy." },
+  { question: "custom software", answer: "Yes—bespoke web/mobile apps, internal tools, workflow automation, and integrations tailored to your business." },
+  { question: "ai consultancy", answer: "We help assess AI readiness, select use-cases, build PoCs, and deploy production ML pipelines." },
+  { question: "technical consultancy", answer: "Architecture reviews, cloud adoption, DevOps, performance, security posture, and cost optimization." },
+  { question: "maintenance services", answer: "Yes—SLA-based maintenance, monitoring, and iterative enhancements post-launch." },
+
+  // Domains & Use-cases
+  { question: "industries served", answer: "Education, retail, small businesses, startups, research groups, and early-stage SaaS." },
+  { question: "use cases", answer: "Lead qualification chatbots, smart CCTV analytics, content moderation, document processing, sales dashboards, and workflow automation." },
+
+  // Projects & Portfolio
+  { question: "projects", answer: "Smart CCTV Surveillance (AI), Debate Assistant AI, web-based music platform, typing practice game, data dashboards, and custom CRMs." },
+  { question: "project completion", answer: "We have successfully delivered multiple AI/ML and full-stack projects with ongoing support." },
+  { question: "ongoing projects", answer: "AI assistants, IoT-enabled monitoring, knowledge chatbots, and enterprise automation tools." },
+  { question: "future projects", answer: "Healthcare AI, domain-specific copilots, and scalable low-code automation modules." },
+  { question: "portfolio", answer: "Selected case studies can be shared privately on request due to client confidentiality." },
+
+  // Clients, Testimonials, Partnerships
+  { question: "clients", answer: "Students, startups, institutes, and SMEs seeking training, AI adoption, or custom software." },
+  { question: "customers", answer: "Learners, professionals, and organizations looking for practical solutions and upskilling." },
+  { question: "testimonials", answer: "Clients and students appreciate our hands-on approach, clarity, and on-time delivery." },
+  { question: "partners", answer: "Open to collaborations with institutes, startups, and technology vendors for joint delivery and research." },
+
+  // Training, Internships & Courses
+  { question: "training", answer: "Instructor-led programs in AI/ML, Data Science, Python, MERN full-stack, and software engineering—online and offline." },
+  { question: "internship", answer: "Paid/Unpaid project-based internships (1–3 months) in AI/ML, Web, and Software Development with real deliverables." },
+  { question: "courses", answer: "AI & ML, Data Science, MERN Full-Stack, Python, Web Development fundamentals, Git/DevOps basics, and deployment. And provide hands-on projects for practical experience-Internship & Training" },
+  { question: "certifications", answer: "Yes—industry-recognized certificates on successful completion of training or internship." },
+  { question: "who can join", answer: "Students, freshers, and working professionals aiming to build a project portfolio and job-ready skills." },
+  { question: "training duration", answer: "Short programs: 2–4 weeks; advanced tracks: 3–6 months, depending on depth and capstone work." },
+  { question: "internship duration", answer: "Typically 1–3 months, extendable based on project scope and performance." },
+  { question: "online or offline", answer: "Both are available; online cohorts support flexible schedules and remote collaboration." },
+  { question: "demo", answer: "Yes—free orientation/demo sessions before enrollment to assess fit and expectations." },
+  { question: "fees", answer: "Program fees vary by track and duration; scholarships/discounts may be available for eligible candidates." },
+
+  // Careers
+  { question: "career", answer: "We welcome applications for internships, fresher roles, and technical collaborations. Send your resume to hr@ijekertech.com." },
+  { question: "is ijekertech hiring", answer: "We hire interns and part-time contributors periodically. Share your portfolio/GitHub with hr@ijekertech.com." },
+  { question: "student opportunities", answer: "Internships, live projects, mentorship, and resume-ready capstone work under supervision." },
+
+  // Process & Engagement
+  { question: "engagement model", answer: "Fixed-scope projects, retainer-based engagements, or time-and-materials for ongoing work." },
+  { question: "project timeline", answer: "Small apps: 2–6 weeks; mid-sized solutions: 6–12 weeks; complex AI/enterprise work varies by scope." },
+  { question: "onboarding", answer: "Requirement discovery, solution proposal, milestone plan, and a clear communication cadence." },
+  { question: "proof of concept", answer: "We recommend PoCs for AI use-cases to validate feasibility and ROI before scaling." },
+  { question: "communication", answer: "Weekly/bi-weekly updates via email/meetings; shared boards for tasks and milestones." },
+
+  // Security, Privacy & Compliance
+  { question: "security", answer: "We follow secure-by-design principles, least-privilege access, encrypted data at rest/in transit, and regular reviews." },
+  { question: "data privacy", answer: "Client/stakeholder data is used strictly for the agreed purpose and is never shared without consent." },
+  { question: "privacy policy", answer: "Our privacy policy outlines data handling, retention, and user rights; it can be shared on request or via our website." },
+  { question: "nda", answer: "We support mutual NDAs and confidential engagement terms for sensitive work." },
+  { question: "ip ownership", answer: "By default, IP created under paid engagements is transferred to the client upon final payment unless otherwise agreed." },
+
+  // Pricing & Payments
+  { question: "pricing plans", answer: "Pricing depends on scope, complexity, and timelines; we provide transparent quotes and phased billing." },
+  { question: "payment terms", answer: "Milestone-based invoicing with standard net terms; advance may apply for new engagements." },
+  { question: "refund policy", answer: "Refunds follow our engagement agreement; training refunds depend on session consumption and policy terms." },
+
+  // Support & Contact
+  { question: "support", answer: "Business hours are Monday–Friday, 9 AM–6 PM IST. Extended support is available under SLA." },
+  { question: "support channels", answer: "Email support@ijekertech.com, phone +91 6392554947, or the website chatbot." },
+  { question: "contact", answer: "General inquiries: info@ijekertech.com. Careers: hr@ijekertech.com. Support: support@ijekertech.com." },
+  { question: "newsletter", answer: "Subscribe by emailing support@ijekertech.com to receive product and training updates." },
+  { question: "social media", answer: "Follow us on LinkedIn, X (Twitter), and GitHub for updates, releases, and learning resources." },
+
+  // Sales & Demos
+  { question: "demo requests", answer: "Request a live demo or walkthrough by emailing info@ijekertech.com with your use-case and preferred time." },
+  { question: "proposal", answer: "Share your requirements and we’ll send a detailed proposal with scope, milestones, and pricing." },
+
+  // Chatbot-specific
+  { question: "what can this chatbot answer", answer: "Ask about our services, training, internships, projects, pricing, support hours, and how to get started." },
+  { question: "how to start a project", answer: "Send your brief to info@ijekertech.com. We’ll schedule a discovery call and share a proposal with timelines and costs." },
+
+  // Policies (Website)
+  { question: "terms and conditions", answer: "Our terms and conditions cover usage, liabilities, payment, and IP. A copy is available on our website or on request." },
+
+  // Extras (Good to have)
+  { question: "technology stack", answer: "Python, Node.js, React, MongoDB, PostgreSQL, TensorFlow, PyTorch, OpenCV, Docker, and major cloud providers." },
+  { question: "code ownership", answer: "Client retains ownership of deliverables as per the contract, including source code and documentation." },
+  { question: "documentation", answer: "We deliver basic setup docs, runbooks, and handover notes; extended documentation is available on request." },
+  { question: "training outcomes", answer: "Hands-on skills, portfolio projects, mentorship, and certificate—aimed at job or internship readiness." },
+  { question: "internship outcomes", answer: "Real project exposure, supervised deliverables, review cycles, and a completion certificate." }
 ];
 
 
-function getSmartSuggestions(currentQ) {
-  if (!currentQ) return [];
-  const keywords = currentQ
-    .split(" ")
-    .filter((w) => w.length > 3)
-    .map((w) => w.toLowerCase());
 
+
+// ✅ Suggestion generator (2 related + 2 general)
+function getSmartSuggestions(currentQ) {
+  const keywords = currentQ ? currentQ.split(" ").map(w => w.toLowerCase()) : [];
+
+  // ✅ Find related FAQs
   const related = faq.filter(f => {
-    if (f.question === currentQ) return false;
     const fKeywords = f.question.split(" ").map(w => w.toLowerCase());
     return keywords.some(k => fKeywords.includes(k));
   });
 
-  const shuffled = related.sort(() => 0.5 - Math.random());
-  const uniqueSuggestions = [];
-  const seen = new Set();
+  // ✅ Shuffle related
+  const shuffledRelated = related.sort(() => 0.5 - Math.random());
 
-  for (let q of shuffled) {
-    if (!seen.has(q.question)) {
-      uniqueSuggestions.push(q.question);
-      seen.add(q.question);
-    }
-    if (uniqueSuggestions.length >= 6) break;
-  }
+  // ✅ Pick max 2 related
+  const relatedSuggestions = shuffledRelated.slice(0, 2).map(r => r.question);
 
-  if (uniqueSuggestions.length < 5) {
-    const remaining = faq
-      .filter(f => f.question !== currentQ && !seen.has(f.question))
-      .sort(() => 0.5 - Math.random());
+  // ✅ Get general random suggestions (excluding related)
+  const remaining = faq.filter(f => !relatedSuggestions.includes(f.question));
+  const shuffledGeneral = remaining.sort(() => 0.5 - Math.random());
+  const generalSuggestions = shuffledGeneral.slice(0, 2).map(g => g.question);
 
-    for (let q of remaining) {
-      uniqueSuggestions.push(q.question);
-      if (uniqueSuggestions.length >= 6) break;
-    }
-  }
-
-  return uniqueSuggestions;
+  // ✅ Final list (mix of related + general)
+  return [...relatedSuggestions, ...generalSuggestions];
 }
+
 
 // ✅ POST chat message (secure)
 router.post("/", async (req, res) => {
   try {
-    const { email, from, text } = req.body;
+    let { email, from, text } = req.body;
     if (!email || !text) {
       return res.status(400).json({ error: "Email and message required" });
     }
 
-    // Save user message
-    const userMsg = await Chat.create({ email, from, text });
+    // ✅ Sanitize inputs
+    email = sanitize(email);
+    from = sanitize(from);
+    text = sanitize(text);
 
-    let reply = "Sorry, Please try again! Choose from the suggestions below:";
+    // Save user message
+    await Chat.create({ email, from, text });
+
+    let reply = "Sorry, I couldn’t understand that. Please choose from the suggestions below:";
     let matchedQuestion = "";
+
     const lowerText = text.toLowerCase();
 
-    const matched = faq.find((q) => lowerText.includes(q.question));
+    // ✅ Keyword-based matching
+    const matched = faq.find((f) =>
+      lowerText.includes(f.question.toLowerCase())
+    );
+
     if (matched) {
       reply = matched.answer;
       matchedQuestion = matched.question;
     }
+
     // Save bot reply
     const botMsg = await Chat.create({ email, from: "bot", text: reply });
 
-    // ✅ Return only safe fields (no _id, no __v)
-    const chats = await Chat.find({ email })
-      .select("from text createdAt")
-      .sort({ createdAt: 1 });
-
+    // ✅ Return with better suggestions (2 related + 2 random)
     res.json({
-      chats,
+      botMsg: { from: "bot", text: reply },
       suggestions: getSmartSuggestions(matchedQuestion),
     });
   } catch (err) {
@@ -154,4 +187,5 @@ router.post("/", async (req, res) => {
     res.status(500).json({ error: "Chat failed" });
   }
 });
+
 export default router;
