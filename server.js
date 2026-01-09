@@ -13,19 +13,43 @@ import adminAuthRoutes from "./routes/adminAuth.js";
 
 dotenv.config();
 
+if (!process.env.MONGO_URI) {
+  throw new Error("❌ MONGO_URI not defined");
+}
+
 const app = express();
+app.set("trust proxy", 1);
 
 /* ---------- Middlewares ---------- */
 app.use(express.json());
 app.use(helmet());
 app.use(morgan("dev"));
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  /\.vercel\.app$/,
+  "https://www.ijekertech.com",
+  "https://ijekertech.com",
+];
+
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://www.ijekertech.com"],
-    credentials: true,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+
+      if (
+        allowedOrigins.some((o) =>
+          o instanceof RegExp ? o.test(origin) : o === origin
+        )
+      ) {
+        callback(null, true);
+      } else {
+        callback(new Error("CORS blocked: " + origin));
+      }
+    },
   })
 );
+
 
 /* ---------- Rate Limit ---------- */
 app.use(
@@ -40,21 +64,19 @@ mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB Connected"))
   .catch((err) => {
-    console.error(err);
+    console.error("❌ Mongo Error:", err);
     process.exit(1);
   });
 
 /* ---------- Routes ---------- */
-app.use("/api/certificate", certificateRoutes);
-
 app.use("/api/chat", chatRoutes);
 app.use("/api/leads", leadRoutes);
 app.use("/api/admin", adminAuthRoutes);
 app.use("/api/certificate", certificateRoutes);
 
 /* ---------- Health ---------- */
-app.get("/", (req, res) => {
-  res.send("API running 🚀");
+app.get("/api/health", (req, res) => {
+  res.json({ status: "OK" });
 });
 
 /* ---------- Start ---------- */
