@@ -35,7 +35,7 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
+      if (!origin) return callback(null, true); // allow non-browser requests (like Postman)
 
       if (
         allowedOrigins.some((o) =>
@@ -47,6 +47,7 @@ app.use(
         callback(new Error("CORS blocked: " + origin));
       }
     },
+    credentials: true, // <--- important for axios/fetch withCredentials
   })
 );
 
